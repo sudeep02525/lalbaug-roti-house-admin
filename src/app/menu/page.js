@@ -6,6 +6,7 @@ export default function MenuPage() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [variants, setVariants] = useState([])
+  const [addons, setAddons] = useState([])
   
   const [loading, setLoading] = useState(true)
   
@@ -13,15 +14,18 @@ export default function MenuPage() {
   const [showCatModal, setShowCatModal] = useState(false)
   const [showProdModal, setShowProdModal] = useState(false)
   const [showVarModal, setShowVarModal] = useState(false)
+  const [showAddonModal, setShowAddonModal] = useState(false)
   
   const [selectedCatId, setSelectedCatId] = useState(null)
   const [selectedProdId, setSelectedProdId] = useState(null)
 
   // Forms
   const [catForm, setCatForm] = useState({ id: null, name: "", description: "", active: true })
-  const [prodForm, setProdForm] = useState({ id: null, name: "", description: "", image: "", active: true, categoryId: "", isBestseller: false, isDailyCombo: false })
+  const [prodForm, setProdForm] = useState({ id: null, name: "", description: "", image: "", active: true, categoryId: "", isBestseller: false, isDailyCombo: false, addons: [] })
   const [varForm, setVarForm] = useState({ id: null, name: "", price: "", minQuantity: 1, active: true, productId: "" })
+  const [addonForm, setAddonForm] = useState({ id: null, name: "", price: "", image: "", active: true })
   const [imageFile, setImageFile] = useState(null)
+  const [addonImageFile, setAddonImageFile] = useState(null)
 
   const fetchData = async () => {
     try {
@@ -29,16 +33,18 @@ export default function MenuPage() {
       const token = localStorage.getItem("admin_token")
       const headers = { Authorization: `Bearer ${token}` }
       
-      const [catRes, prodRes, varRes] = await Promise.all([
+      const [catRes, prodRes, varRes, addonRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/categories`, { headers }).then(r => r.json()),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/products`, { headers }).then(r => r.json()),
         // Wait, there's no GET /variants endpoint in catalog.routes.js that returns all variants directly. 
         // We'd have to fetch product by id to get variants or get menu. 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/menu`, { headers }).then(r => r.json())
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/menu`, { headers }).then(r => r.json()),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/addons`, { headers }).then(r => r.json())
       ])
 
       if (catRes.success) setCategories(catRes.data)
       if (prodRes.success) setProducts(prodRes.data)
+      if (addonRes.success) setAddons(addonRes.data)
       
       // Extract all variants from the menu endpoint
       if (varRes.success && varRes.data) {
@@ -61,6 +67,13 @@ export default function MenuPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith('/uploads')) return `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+    if (url.startsWith('/images')) return `https://lalbaug-roti-house-web.vercel.app${url}`;
+    return url;
+  }
 
   // === CATEGORY ===
   const handleSaveCat = async (e) => {
@@ -131,7 +144,7 @@ export default function MenuPage() {
         body: JSON.stringify({ 
           name: prodForm.name, description: prodForm.description, 
           images: imageUrl ? [imageUrl] : [], active: prodForm.active, categoryId: prodForm.categoryId,
-          isBestseller: prodForm.isBestseller, isDailyCombo: prodForm.isDailyCombo
+          isBestseller: prodForm.isBestseller, isDailyCombo: prodForm.isDailyCombo, addons: prodForm.addons
         })
       })
       if (res.ok) {
@@ -186,6 +199,69 @@ export default function MenuPage() {
     fetchData()
   }
 
+  // === ADDON ===
+  const handleSaveAddon = async (e) => {
+    e.preventDefault()
+    try {
+      setLoading(true)
+      const token = localStorage.getItem("admin_token")
+      
+      let imageUrl = addonForm.image;
+      
+      if (addonImageFile) {
+        const formData = new FormData();
+        formData.append('image', addonImageFile);
+        
+        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/products/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          imageUrl = uploadData.data.imageUrl;
+        } else {
+          alert('Image upload failed: ' + uploadData.message);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const url = addonForm.id 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/addons/${addonForm.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/addons`
+      
+      const res = await fetch(url, {
+        method: addonForm.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: addonForm.name, price: Number(addonForm.price), image: imageUrl, active: addonForm.active })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setShowAddonModal(false)
+        setAddonImageFile(null)
+        fetchData()
+      } else {
+        alert(data.message || "Failed to save extra")
+        setLoading(false)
+      }
+    } catch(err) { 
+      console.error(err)
+      alert("Something went wrong!")
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAddon = async (id) => {
+    if(!confirm("Delete this extra?")) return;
+    const token = localStorage.getItem("admin_token")
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/addons/${id}`, {
+      method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+    })
+    fetchData()
+  }
+
   if (loading) return <div className="flex justify-center mt-20"><Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" /></div>
 
   return (
@@ -213,7 +289,7 @@ export default function MenuPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setProdForm({id:null, name:"", description:"", image:"", active:true, categoryId: cat._id}); setShowProdModal(true) }} className="text-sm bg-[#F2ECE4] dark:bg-[var(--sidebar)] text-[var(--foreground)] px-3 py-1.5 rounded-lg flex items-center gap-1 font-semibold hover:bg-[var(--border)] border border-[var(--border)]">
+              <button onClick={() => { setProdForm({id:null, name:"", description:"", image:"", active:true, categoryId: cat._id, isBestseller: false, isDailyCombo: false, addons: []}); setShowProdModal(true) }} className="text-sm bg-[#F2ECE4] dark:bg-[var(--sidebar)] text-[var(--foreground)] px-3 py-1.5 rounded-lg flex items-center gap-1 font-semibold hover:bg-[var(--border)] border border-[var(--border)]">
                 <Plus className="w-3.5 h-3.5" /> Product
               </button>
               <button onClick={() => { setCatForm({id:cat._id, name:cat.name, description:cat.description||"", active:cat.active}); setShowCatModal(true) }} className="text-[var(--primary)] hover:bg-[var(--primary)]/10 p-2 rounded-md"><Edit className="w-4 h-4" /></button>
@@ -226,14 +302,14 @@ export default function MenuPage() {
               <div key={prod._id} className="border border-[var(--border)] rounded-xl p-4 bg-white dark:bg-[var(--sidebar)]">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex gap-3">
-                    {prod.images?.[0] && <img src={prod.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover" />}
+                    {prod.images?.[0] && <img src={getImageUrl(prod.images[0])} alt="" className="w-12 h-12 rounded-lg object-cover" />}
                     <div>
                       <h3 className="font-bold text-[var(--foreground)] leading-tight">{prod.name}</h3>
                       <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">{prod.description}</p>
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => { setProdForm({id:prod._id, name:prod.name, description:prod.description, image:prod.images?.[0]||"", active:prod.active, categoryId:cat._id, isBestseller:prod.isBestseller||false, isDailyCombo:prod.isDailyCombo||false}); setImageFile(null); setShowProdModal(true) }} className="text-[var(--primary)] p-1 hover:bg-[var(--primary)]/10 rounded"><Edit className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => { setProdForm({id:prod._id, name:prod.name, description:prod.description, image:prod.images?.[0]||"", active:prod.active, categoryId:cat._id, isBestseller:prod.isBestseller||false, isDailyCombo:prod.isDailyCombo||false, addons: prod.addons?.map(a => a._id ? a._id : a) || []}); setImageFile(null); setShowProdModal(true) }} className="text-[var(--primary)] p-1 hover:bg-[var(--primary)]/10 rounded"><Edit className="w-3.5 h-3.5" /></button>
                     <button onClick={() => handleDeleteProd(prod._id)} className="text-red-500 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
@@ -266,6 +342,42 @@ export default function MenuPage() {
           </div>
         </div>
       ))}
+
+      {/* ADDONS SECTION */}
+      <div className="glass-panel rounded-2xl p-6 mb-6 premium-shadow mt-8">
+        <div className="flex justify-between items-center border-b border-[var(--border)] pb-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+              <Plus className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[var(--foreground)]">Extras (Addons)</h2>
+              <p className="text-xs text-[var(--muted-foreground)]">Manage additional items like extra pav, chutney, etc.</p>
+            </div>
+          </div>
+          <button onClick={() => { setAddonForm({id:null, name:"", price:"", image:"", active:true}); setAddonImageFile(null); setShowAddonModal(true) }} className="text-sm bg-[#F2ECE4] dark:bg-[var(--sidebar)] text-[var(--foreground)] px-3 py-1.5 rounded-lg flex items-center gap-1 font-semibold hover:bg-[var(--border)] border border-[var(--border)]">
+            <Plus className="w-3.5 h-3.5" /> Add Extra
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {addons.map(addon => (
+            <div key={addon._id} className="border border-[var(--border)] rounded-xl p-4 bg-white dark:bg-[var(--sidebar)] flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {addon.image && <img src={getImageUrl(addon.image)} alt={addon.name} className="w-10 h-10 rounded-lg object-cover border border-[var(--border)]" />}
+                <div>
+                  <h3 className="font-bold text-[var(--foreground)] leading-tight">{addon.name}</h3>
+                  <span className="font-bold text-[var(--primary)] text-sm">+₹{addon.price}</span>
+                </div>
+              </div>
+              <div className="flex">
+                <button onClick={() => { setAddonForm({id:addon._id, name:addon.name, price:addon.price, image:addon.image||"", active:addon.active}); setAddonImageFile(null); setShowAddonModal(true) }} className="text-[var(--primary)] p-1 hover:bg-[var(--primary)]/10 rounded"><Edit className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDeleteAddon(addon._id)} className="text-red-500 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
+          ))}
+          {addons.length === 0 && <div className="text-sm text-gray-500">No extras added yet.</div>}
+        </div>
+      </div>
 
       {/* Category Modal */}
       {showCatModal && (
@@ -300,7 +412,7 @@ export default function MenuPage() {
                 <label className="text-sm font-medium block mb-1">Product Image</label>
                 {prodForm.image && !imageFile && (
                   <div className="mb-2 relative w-fit">
-                    <img src={prodForm.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL}${prodForm.image}` : prodForm.image} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-[var(--border)]" />
+                    <img src={getImageUrl(prodForm.image)} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-[var(--border)]" />
                     <button type="button" onClick={() => setProdForm({...prodForm, image: ""})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
                   </div>
                 )}
@@ -318,6 +430,23 @@ export default function MenuPage() {
                   <input type="checkbox" checked={prodForm.isDailyCombo} onChange={e=>setProdForm({...prodForm, isDailyCombo:e.target.checked})} className="w-4 h-4 text-[var(--primary)] rounded focus:ring-[var(--primary)]" />
                   Feature as Daily Combo Meal
                 </label>
+              </div>
+              <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <label className="text-sm font-medium block mb-2">Select Extras (Addons)</label>
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                  {addons.map(a => (
+                    <label key={a._id} className="flex items-center gap-2 text-sm bg-gray-50 dark:bg-black/20 p-2 rounded border border-[var(--border)] cursor-pointer">
+                      <input type="checkbox" checked={prodForm.addons?.includes(a._id)} onChange={e => {
+                        const newAddons = e.target.checked 
+                          ? [...(prodForm.addons||[]), a._id] 
+                          : (prodForm.addons||[]).filter(id => id !== a._id);
+                        setProdForm({...prodForm, addons: newAddons})
+                      }} className="text-[var(--primary)] rounded focus:ring-[var(--primary)]" />
+                      <span className="truncate">{a.name}</span> <span className="text-[var(--primary)] font-bold">+₹{a.price}</span>
+                    </label>
+                  ))}
+                  {addons.length === 0 && <span className="text-xs text-gray-400">No extras available. Add them first.</span>}
+                </div>
               </div>
               <button className="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold">Save Product</button>
             </form>
@@ -338,6 +467,36 @@ export default function MenuPage() {
               <div><label className="text-sm font-medium">Price (₹)</label><input required type="number" value={varForm.price} onChange={e=>setVarForm({...varForm, price:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
               <div><label className="text-sm font-medium">Minimum Quantity</label><input required type="number" value={varForm.minQuantity} onChange={e=>setVarForm({...varForm, minQuantity:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
               <button className="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold">Save Variant</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Addon Modal */}
+      {showAddonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[var(--sidebar)] rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">{addonForm.id ? "Edit Extra" : "New Extra"}</h3>
+              <button onClick={() => { setShowAddonModal(false); setAddonImageFile(null); }}><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleSaveAddon} className="space-y-4">
+              <div><label className="text-sm font-medium">Extra Name (e.g. Extra Pav)</label><input required value={addonForm.name} onChange={e=>setAddonForm({...addonForm, name:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
+              <div><label className="text-sm font-medium">Price (₹)</label><input required type="number" value={addonForm.price} onChange={e=>setAddonForm({...addonForm, price:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Extra Image (Optional)</label>
+                {addonForm.image && !addonImageFile && (
+                  <div className="mb-2 relative w-fit">
+                    <img src={getImageUrl(addonForm.image)} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-[var(--border)]" />
+                    <button type="button" onClick={() => setAddonForm({...addonForm, image: ""})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
+                  </div>
+                )}
+                {addonImageFile && (
+                  <div className="mb-2 text-xs text-[var(--primary)] font-medium">New file selected: {addonImageFile.name}</div>
+                )}
+                <input type="file" accept="image/jpeg, image/png, image/webp" onChange={e => setAddonImageFile(e.target.files[0])} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--primary)]/10 file:text-[var(--primary)] hover:file:bg-[var(--primary)]/20" />
+              </div>
+              <button className="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold">Save Extra</button>
             </form>
           </div>
         </div>
