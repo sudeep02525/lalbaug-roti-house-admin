@@ -21,6 +21,7 @@ export default function MenuPage() {
   const [catForm, setCatForm] = useState({ id: null, name: "", description: "", active: true })
   const [prodForm, setProdForm] = useState({ id: null, name: "", description: "", image: "", active: true, categoryId: "", isBestseller: false, isDailyCombo: false })
   const [varForm, setVarForm] = useState({ id: null, name: "", price: "", minQuantity: 1, active: true, productId: "" })
+  const [imageFile, setImageFile] = useState(null)
 
   const fetchData = async () => {
     try {
@@ -95,7 +96,31 @@ export default function MenuPage() {
   const handleSaveProd = async (e) => {
     e.preventDefault()
     try {
+      setLoading(true)
       const token = localStorage.getItem("admin_token")
+      
+      let imageUrl = prodForm.image;
+      
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/products/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          imageUrl = uploadData.data.imageUrl;
+        } else {
+          alert('Image upload failed: ' + uploadData.message);
+          setLoading(false);
+          return;
+        }
+      }
+
       const url = prodForm.id 
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/products/${prodForm.id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/api/v1/catalog/products`
@@ -105,15 +130,18 @@ export default function MenuPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
           name: prodForm.name, description: prodForm.description, 
-          images: [prodForm.image], active: prodForm.active, categoryId: prodForm.categoryId,
+          images: imageUrl ? [imageUrl] : [], active: prodForm.active, categoryId: prodForm.categoryId,
           isBestseller: prodForm.isBestseller, isDailyCombo: prodForm.isDailyCombo
         })
       })
       if (res.ok) {
         setShowProdModal(false)
+        setImageFile(null)
         fetchData()
+      } else {
+        setLoading(false)
       }
-    } catch(err) { console.error(err) }
+    } catch(err) { console.error(err); setLoading(false); }
   }
 
   const handleDeleteProd = async (id) => {
@@ -205,7 +233,7 @@ export default function MenuPage() {
                     </div>
                   </div>
                   <div className="flex">
-                    <button onClick={() => { setProdForm({id:prod._id, name:prod.name, description:prod.description, image:prod.images?.[0]||"", active:prod.active, categoryId:cat._id, isBestseller:prod.isBestseller||false, isDailyCombo:prod.isDailyCombo||false}); setShowProdModal(true) }} className="text-[var(--primary)] p-1 hover:bg-[var(--primary)]/10 rounded"><Edit className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => { setProdForm({id:prod._id, name:prod.name, description:prod.description, image:prod.images?.[0]||"", active:prod.active, categoryId:cat._id, isBestseller:prod.isBestseller||false, isDailyCombo:prod.isDailyCombo||false}); setImageFile(null); setShowProdModal(true) }} className="text-[var(--primary)] p-1 hover:bg-[var(--primary)]/10 rounded"><Edit className="w-3.5 h-3.5" /></button>
                     <button onClick={() => handleDeleteProd(prod._id)} className="text-red-500 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
@@ -262,12 +290,25 @@ export default function MenuPage() {
           <div className="bg-white dark:bg-[var(--sidebar)] rounded-2xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">{prodForm.id ? "Edit Product" : "New Product"}</h3>
-              <button onClick={() => setShowProdModal(false)}><X className="w-5 h-5" /></button>
+              <button onClick={() => { setShowProdModal(false); setImageFile(null); }}><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSaveProd} className="space-y-4">
               <div><label className="text-sm font-medium">Name</label><input required value={prodForm.name} onChange={e=>setProdForm({...prodForm, name:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
               <div><label className="text-sm font-medium">Description</label><input value={prodForm.description} onChange={e=>setProdForm({...prodForm, description:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
-              <div><label className="text-sm font-medium">Image URL (e.g. /images/dal.png)</label><input value={prodForm.image} onChange={e=>setProdForm({...prodForm, image:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
+              
+              <div>
+                <label className="text-sm font-medium block mb-1">Product Image</label>
+                {prodForm.image && !imageFile && (
+                  <div className="mb-2 relative w-fit">
+                    <img src={prodForm.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL}${prodForm.image}` : prodForm.image} alt="Preview" className="w-20 h-20 object-cover rounded-lg border border-[var(--border)]" />
+                    <button type="button" onClick={() => setProdForm({...prodForm, image: ""})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
+                  </div>
+                )}
+                {imageFile && (
+                  <div className="mb-2 text-xs text-[var(--primary)] font-medium">New file selected: {imageFile.name}</div>
+                )}
+                <input type="file" accept="image/jpeg, image/png, image/webp" onChange={e => setImageFile(e.target.files[0])} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--primary)]/10 file:text-[var(--primary)] hover:file:bg-[var(--primary)]/20" />
+              </div>
               <div className="flex gap-4 mt-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input type="checkbox" checked={prodForm.isBestseller} onChange={e=>setProdForm({...prodForm, isBestseller:e.target.checked})} className="w-4 h-4 text-[var(--primary)] rounded focus:ring-[var(--primary)]" />
