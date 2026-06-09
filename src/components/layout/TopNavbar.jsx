@@ -1,5 +1,5 @@
 "use client"
-import { Search, Bell, UserCircle, Sun, Moon, Monitor, LogOut } from 'lucide-react'
+import { Search, Bell, UserCircle, Sun, Moon, Monitor, LogOut, Menu } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { useTheme } from 'next-themes'
@@ -31,7 +31,7 @@ function ThemeToggle() {
   )
 }
 
-export function TopNavbar() {
+export function TopNavbar({ onMenuClick }) {
   const router = useRouter()
   const [adminName, setAdminName] = useState('Admin User')
   const [adminRole, setAdminRole] = useState('Super Admin')
@@ -50,8 +50,13 @@ export function TopNavbar() {
   }, [])
 
   return (
-    <header className="h-20 border border-[var(--border)]/50 glass-panel flex items-center justify-end px-6 md:px-8 sticky top-4 z-30 transition-all duration-300 rounded-3xl premium-shadow">
-      <div className="flex items-center space-x-3">
+    <header className="h-16 md:h-20 border border-[var(--border)]/50 glass-panel flex items-center justify-between px-4 md:px-8 sticky top-2 md:top-4 z-30 transition-all duration-300 rounded-2xl md:rounded-3xl premium-shadow">
+      <div className="flex items-center">
+        <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden mr-2">
+          <Menu className="w-6 h-6 text-[var(--foreground)]" />
+        </Button>
+      </div>
+      <div className="flex items-center space-x-2 md:space-x-3">
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="relative w-10 h-10 rounded-full hover:bg-[var(--active-menu)] hover:text-[var(--primary)] transition-all">
           <Bell className="w-5 h-5 text-[var(--muted-foreground)]" />

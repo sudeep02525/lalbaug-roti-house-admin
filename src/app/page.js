@@ -14,11 +14,12 @@ export default function Dashboard() {
     const token = localStorage.getItem('admin_token')
     const headers = { 'Authorization': `Bearer ${token}` }
 
-    const fetchData = async () => {
+    const fetchData = async (isPolling = false) => {
+      if (!isPolling) setLoading(true)
       try {
         const [dashRes, ordersRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/dashboard`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/dashboard?t=${new Date().getTime()}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders?t=${new Date().getTime()}`, { headers }),
         ])
 
         if (dashRes.ok) {
@@ -34,11 +35,18 @@ export default function Dashboard() {
       } catch (err) {
         console.error('Dashboard fetch error:', err)
       } finally {
-        setLoading(false)
+        if (!isPolling) setLoading(false)
       }
     }
 
     fetchData()
+    
+    // Auto-refresh (polling) every 15 seconds
+    const intervalId = setInterval(() => {
+      fetchData(true)
+    }, 15000)
+    
+    return () => clearInterval(intervalId)
   }, [])
 
   const statCards = [

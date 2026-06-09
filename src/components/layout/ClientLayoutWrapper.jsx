@@ -9,6 +9,7 @@ export function ClientLayoutWrapper({ children }) {
   const pathname = usePathname()
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const noLayoutPaths = ['/login', '/delivery-login', '/delivery-dashboard']
   const isAuthPage = noLayoutPaths.includes(pathname)
@@ -24,6 +25,25 @@ export function ClientLayoutWrapper({ children }) {
       router.push('/login')
     } else {
       setAuthChecked(true)
+    }
+
+    // Global fetch interceptor for 401 Unauthorized
+    if (typeof window !== 'undefined') {
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        try {
+          const response = await originalFetch(...args);
+          if (response.status === 401) {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_user');
+            // Force reload to login to clear any state
+            window.location.href = '/login';
+          }
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      };
     }
   }, [pathname, isAuthPage, router])
 
@@ -47,11 +67,20 @@ export function ClientLayoutWrapper({ children }) {
   }
 
   return (
-    <div className="layout-bg flex min-h-screen p-4 gap-4">
-      <Sidebar />
-      <div className="flex-1 md:ml-[280px] flex flex-col min-h-[calc(100vh-32px)] relative z-10 gap-4">
-        <TopNavbar />
-        <main className="flex-1 overflow-auto rounded-3xl pb-8">
+    <div className="layout-bg flex min-h-screen p-2 md:p-4 gap-2 md:gap-4 relative">
+      <Sidebar isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
+      
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      <div className="flex-1 md:ml-[280px] flex flex-col min-h-[calc(100vh-16px)] md:min-h-[calc(100vh-32px)] relative z-10 gap-2 md:gap-4 w-full">
+        <TopNavbar onMenuClick={() => setIsMobileOpen(true)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto rounded-2xl md:rounded-3xl pb-8">
           {children}
         </main>
       </div>

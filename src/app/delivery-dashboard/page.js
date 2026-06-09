@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { LogOut, MapPin, Phone, CheckCircle2, Navigation, Package, User, Sun, Moon, KeyRound, X } from "lucide-react"
+import { LogOut, MapPin, Phone, CheckCircle2, Navigation, Package, User, Sun, Moon, KeyRound, X, Menu } from "lucide-react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 
@@ -37,6 +37,7 @@ export default function DeliveryDashboard() {
   const [user, setUser] = useState(null)
   const [updatingId, setUpdatingId] = useState(null)
   const [activeTab, setActiveTab] = useState('orders')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
   // Password Change State
   const [passForm, setPassForm] = useState({ currentPassword: '', newPassword: '' })
@@ -208,15 +209,28 @@ export default function DeliveryDashboard() {
   }
 
   return (
-    <div className="layout-bg flex min-h-screen p-4 gap-4 selection:bg-[#E8A359] selection:text-[#14452F]">
+    <div className="layout-bg flex min-h-screen p-2 md:p-4 gap-2 md:gap-4 selection:bg-[#E8A359] selection:text-[#14452F] relative">
       
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar matching Admin Layout */}
-      <aside className="w-[260px] border border-[var(--border)]/50 glass-panel hidden md:block h-[calc(100vh-32px)] fixed top-4 left-4 z-40 rounded-3xl premium-shadow overflow-hidden">
-        <div className="flex h-20 items-center px-6 border-b border-[var(--border)]/50">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mr-3 premium-shadow overflow-hidden bg-white shrink-0 ring-2 ring-[var(--primary)]/20">
-            <img src="/logo.jpeg" alt="Logo" className="object-cover w-full h-full scale-[1.05]" />
+      <aside className={`w-[260px] border border-[var(--border)]/50 glass-panel h-[calc(100vh-16px)] md:h-[calc(100vh-32px)] fixed top-2 md:top-4 z-40 rounded-2xl md:rounded-3xl premium-shadow overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'left-2 translate-x-0' : '-translate-x-[150%] md:translate-x-0 left-2 md:left-4'}`}>
+        <div className="flex h-16 md:h-20 items-center justify-between px-6 border-b border-[var(--border)]/50">
+          <div className="flex items-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mr-3 premium-shadow overflow-hidden bg-white shrink-0 ring-2 ring-[var(--primary)]/20">
+              <img src="/logo.jpeg" alt="Logo" className="object-cover w-full h-full scale-[1.05]" />
+            </div>
+            <h1 className="text-lg font-extrabold text-[var(--foreground)] tracking-tight">Delivery</h1>
           </div>
-          <h1 className="text-lg font-extrabold text-[var(--foreground)] tracking-tight">Delivery</h1>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+            <X className="w-6 h-6" />
+          </button>
         </div>
         
         <div className="px-4 py-4 text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-widest mt-2">
@@ -225,7 +239,7 @@ export default function DeliveryDashboard() {
 
         <nav className="px-3 space-y-1">
           <div 
-            onClick={() => setActiveTab('orders')}
+            onClick={() => { setActiveTab('orders'); setIsMobileMenuOpen(false); }}
             className={`relative flex items-center space-x-3 px-4 py-3.5 mb-1 rounded-2xl text-sm font-semibold transition-all duration-300 cursor-pointer ${
               activeTab === 'orders' 
                 ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-hover)] text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/20' 
@@ -237,7 +251,7 @@ export default function DeliveryDashboard() {
           </div>
           
           <div 
-            onClick={() => setActiveTab('profile')}
+            onClick={() => { setActiveTab('profile'); setIsMobileMenuOpen(false); }}
             className={`relative flex items-center space-x-3 px-4 py-3.5 mb-1 rounded-2xl text-sm font-semibold transition-all duration-300 cursor-pointer ${
               activeTab === 'profile'
                 ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-hover)] text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/20'
@@ -264,16 +278,19 @@ export default function DeliveryDashboard() {
         </div>
       </aside>
 
-      <div className="flex-1 md:ml-[280px] flex flex-col min-h-[calc(100vh-32px)] relative z-10 gap-4">
+      <div className="flex-1 md:ml-[280px] flex flex-col min-h-[calc(100vh-16px)] md:min-h-[calc(100vh-32px)] relative z-10 gap-2 md:gap-4 w-full">
         {/* Header */}
-        <header className="h-20 border border-[var(--border)]/50 glass-panel flex items-center justify-between px-6 md:px-8 sticky top-0 md:top-4 z-30 transition-all duration-300 rounded-2xl md:rounded-3xl premium-shadow">
+        <header className="h-16 md:h-20 border border-[var(--border)]/50 glass-panel flex items-center justify-between px-4 md:px-8 sticky top-2 md:top-4 z-30 transition-all duration-300 rounded-2xl md:rounded-3xl premium-shadow">
           <div className="flex items-center gap-3">
-            <div className="md:hidden w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md overflow-hidden ring-2 ring-[var(--primary)]">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-[var(--foreground)] p-1 hover:bg-[var(--border)]/50 rounded-lg transition-colors">
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="md:hidden w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md overflow-hidden ring-2 ring-[var(--primary)] shrink-0">
               <img src="/logo.jpeg" alt="Logo" className="w-full h-full object-cover scale-[1.05]" />
             </div>
             <div>
               <h1 className="font-bold text-[var(--foreground)] leading-tight text-lg sm:text-xl">Dashboard</h1>
-              {user && <p className="text-xs text-[var(--muted-foreground)] font-medium">Welcome back, {user.name}</p>}
+              {user && <p className="text-xs text-[var(--muted-foreground)] font-medium hidden sm:block">Welcome back, {user.name}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">

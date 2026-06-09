@@ -13,7 +13,8 @@ import {
   User,
   Video,
   LogOut,
-  UtensilsCrossed
+  UtensilsCrossed,
+  X
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -28,7 +29,7 @@ const navItems = [
   { name: 'Profile', href: '/profile', icon: User },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -39,12 +40,17 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-[260px] border border-[var(--border)]/50 glass-panel hidden md:block h-[calc(100vh-32px)] fixed top-4 left-4 z-40 rounded-3xl premium-shadow overflow-hidden">
-      <div className="flex h-20 items-center px-6 border-b border-[var(--border)]/50">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mr-3 premium-shadow overflow-hidden bg-white shrink-0">
-          <Image src="/logo.jpeg" alt="Lalbaug Roti House" width={48} height={48} className="object-cover w-full h-full" />
+    <aside className={`w-[260px] border border-[var(--border)]/50 glass-panel h-[calc(100vh-16px)] md:h-[calc(100vh-32px)] fixed top-2 md:top-4 z-40 rounded-2xl md:rounded-3xl premium-shadow overflow-hidden transition-all duration-300 ${isOpen ? 'left-2 translate-x-0' : '-translate-x-[150%] md:translate-x-0 left-2 md:left-4'}`}>
+      <div className="flex h-16 md:h-20 items-center justify-between px-6 border-b border-[var(--border)]/50">
+        <div className="flex items-center">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mr-3 premium-shadow overflow-hidden bg-white shrink-0">
+            <Image src="/logo.jpeg" alt="Lalbaug Roti House" width={48} height={48} className="object-cover w-full h-full" />
+          </div>
+          <h1 className="text-lg font-extrabold text-[var(--foreground)] tracking-tight">Lalbaug Roti</h1>
         </div>
-        <h1 className="text-lg font-extrabold text-[var(--foreground)] tracking-tight">Lalbaug Roti</h1>
+        <button onClick={onClose} className="md:hidden text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+          <X className="w-6 h-6" />
+        </button>
       </div>
       
       <div className="px-4 py-4 text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-widest mt-2">
@@ -60,6 +66,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onClose}
               className={`relative flex items-center space-x-3 px-4 py-3.5 mb-1 rounded-2xl text-sm font-semibold transition-all duration-300 group ${
                 isActive 
                   ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-hover)] text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/20' 

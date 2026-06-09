@@ -11,17 +11,34 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
-  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+  const [initialLoad, setInitialLoad] = useState(true)
+
+  // Headers defined dynamically in functions now
 
   useEffect(() => {
     fetchSettings()
   }, [])
 
+  // Auto-save debounce effect
+  useEffect(() => {
+    if (initialLoad || !settings) return;
+    
+    const timer = setTimeout(() => {
+      handleSave(settings)
+    }, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [settings])
+
   const fetchSettings = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`)
+      const freshToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
+      const freshHeaders = { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' }
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
+        headers: freshHeaders
+      })
       if (res.ok) {
         const data = await res.json()
         setSettings(data.data)
@@ -30,6 +47,7 @@ export default function SettingsPage() {
       console.error('Failed to fetch settings:', err)
     } finally {
       setLoading(false)
+      setInitialLoad(false)
     }
   }
 
@@ -42,24 +60,27 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = async () => {
+  const handleSave = async (currentSettings) => {
     setSaving(true)
     try {
+      const freshToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
+      const freshHeaders = { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' }
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
         method: 'PUT',
-        headers,
+        headers: freshHeaders,
         body: JSON.stringify({
-          minOrderQty: Number(settings.minOrderQty),
-          maxRadiusKm: Number(settings.maxRadiusKm),
-          restaurantLat: Number(settings.restaurantLat),
-          restaurantLng: Number(settings.restaurantLng),
-          restaurantPhone: settings.restaurantPhone,
-          restaurantName: settings.restaurantName,
+          maxRadiusKm: Number(currentSettings.maxRadiusKm),
+          restaurantLat: Number(currentSettings.restaurantLat),
+          restaurantLng: Number(currentSettings.restaurantLng),
+          restaurantPhone: currentSettings.restaurantPhone,
+          restaurantName: currentSettings.restaurantName,
+          isAcceptingOrders: currentSettings.isAcceptingOrders,
+          serviceStartTime: currentSettings.serviceStartTime,
+          serviceEndTime: currentSettings.serviceEndTime,
         }),
       })
-      if (res.ok) {
-        showToast('Settings saved successfully!')
-      } else {
+      if (!res.ok) {
         const data = await res.json()
         showToast(data.message || 'Failed to save settings', 'error')
       }
@@ -97,9 +118,17 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--foreground)] tracking-tight mb-2">System Settings</h1>
-        <p className="text-[var(--muted-foreground)] font-medium">Configure global settings for the platform.</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--foreground)] tracking-tight mb-2">System Settings</h1>
+          <p className="text-[var(--muted-foreground)] font-medium">Configure global settings for the platform.</p>
+        </div>
+        {saving && (
+          <div className="flex items-center gap-2 text-[var(--muted-foreground)] text-sm font-medium">
+            <div className="w-4 h-4 border-2 border-t-transparent border-[var(--primary)] rounded-full animate-spin"></div>
+            Saving...
+          </div>
+        )}
       </div>
 
       <Card className="glass-panel premium-shadow overflow-hidden">
@@ -148,20 +177,56 @@ export default function SettingsPage() {
 
       <Card className="glass-panel premium-shadow overflow-hidden">
         <CardHeader className="border-b border-[var(--border)]/50 bg-black/5 dark:bg-white/5">
+          <CardTitle>Operating Hours</CardTitle>
+          <CardDescription>Control when customers can place orders on the website.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 pt-6">
+          <div className="flex items-center justify-between bg-[var(--muted)]/50 p-4 rounded-lg border border-[var(--border)]">
+            <div>
+              <p className="font-semibold text-[var(--foreground)]">Accept Orders</p>
+              <p className="text-sm text-[var(--muted-foreground)]">Manually turn the store on or off</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={settings?.isAcceptingOrders ?? true}
+                onChange={e => handleChange('isAcceptingOrders', e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+            </label>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">Service Start Time</label>
+              <Input
+                type="time"
+                value={settings?.serviceStartTime || '09:00'}
+                onChange={e => handleChange('serviceStartTime', e.target.value)}
+              />
+              <p className="text-[13px] text-[var(--muted-foreground)]">Daily opening time (IST).</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">Service End Time</label>
+              <Input
+                type="time"
+                value={settings?.serviceEndTime || '22:00'}
+                onChange={e => handleChange('serviceEndTime', e.target.value)}
+              />
+              <p className="text-[13px] text-[var(--muted-foreground)]">Daily closing time (IST).</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="glass-panel premium-shadow overflow-hidden">
+        <CardHeader className="border-b border-[var(--border)]/50 bg-black/5 dark:bg-white/5">
           <CardTitle>Delivery Settings</CardTitle>
           <CardDescription>Update rules regarding delivery charges and order limits.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">Minimum Order Quantity (Rotis)</label>
-              <Input
-                type="number"
-                value={settings?.minOrderQty || ''}
-                onChange={e => handleChange('minOrderQty', e.target.value)}
-              />
-              <p className="text-[13px] text-[var(--muted-foreground)]">The minimum number of rotis required to place an order.</p>
-            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">Maximum Delivery Radius (km)</label>
               <Input
@@ -173,12 +238,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="border-t border-[var(--border)] pt-6">
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   )

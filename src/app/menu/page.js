@@ -179,7 +179,7 @@ export default function MenuPage() {
         method: varForm.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
-          name: varForm.name, price: Number(varForm.price), 
+          name: Number(varForm.minQuantity) === 1 ? "Single" : `Pack of ${varForm.minQuantity}`, price: Number(varForm.price), 
           minQuantity: Number(varForm.minQuantity), active: varForm.active, productId: varForm.productId 
         })
       })
@@ -327,7 +327,7 @@ export default function MenuPage() {
                   </div>
                   {variants.filter(v => v.productId === prod._id).map(v => (
                     <div key={v._id} className="flex justify-between items-center text-sm py-1 px-1 border-b border-[var(--border)]/50 last:border-0">
-                      <span className="font-medium">{v.name} (Qty {v.minQuantity})</span>
+                      <span className="font-medium">{v.minQuantity === 1 ? "Single Price" : `Discount at Qty ${v.minQuantity}`}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-[var(--primary)]">₹{v.price}</span>
                         <button onClick={() => { setVarForm({id:v._id, name:v.name, price:v.price, minQuantity:v.minQuantity, active:v.active, productId:prod._id}); setShowVarModal(true) }} className="text-gray-400 hover:text-[var(--primary)]"><Edit className="w-3 h-3" /></button>
@@ -463,10 +463,9 @@ export default function MenuPage() {
               <button onClick={() => setShowVarModal(false)}><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSaveVar} className="space-y-4">
-              <div><label className="text-sm font-medium">Variant Name (e.g. Single, Pack of 5)</label><input required value={varForm.name} onChange={e=>setVarForm({...varForm, name:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
+              <div><label className="text-sm font-medium">Minimum Quantity to trigger price</label><input required type="number" min="1" value={varForm.minQuantity} onChange={e=>setVarForm({...varForm, minQuantity:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
               <div><label className="text-sm font-medium">Price (₹)</label><input required type="number" value={varForm.price} onChange={e=>setVarForm({...varForm, price:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
-              <div><label className="text-sm font-medium">Minimum Quantity</label><input required type="number" value={varForm.minQuantity} onChange={e=>setVarForm({...varForm, minQuantity:e.target.value})} className="w-full mt-1 px-3 py-2 border rounded-lg" /></div>
-              <button className="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold">Save Variant</button>
+              <button className="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold">Save Price Rule</button>
             </form>
           </div>
         </div>
