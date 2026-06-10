@@ -11,7 +11,7 @@ export function ClientLayoutWrapper({ children }) {
   const [authChecked, setAuthChecked] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-  const noLayoutPaths = ['/login', '/delivery-login', '/delivery-dashboard']
+  const noLayoutPaths = ['/login']
   const isAuthPage = noLayoutPaths.includes(pathname)
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export function ClientLayoutWrapper({ children }) {
 
       <div className="flex-1 md:ml-[280px] flex flex-col min-h-[calc(100vh-16px)] md:min-h-[calc(100vh-32px)] relative z-10 gap-2 md:gap-4 w-full">
         <TopNavbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto rounded-2xl md:rounded-3xl pb-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto rounded-2xl md:rounded-3xl pb-8 px-4 md:px-8 pt-4">
           {children}
         </main>
       </div>

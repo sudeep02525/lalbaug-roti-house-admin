@@ -240,14 +240,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-12 pt-8 text-center border-t border-[var(--border)]">
-            <p className="text-sm text-[var(--muted-foreground)] font-medium">
-              Are you a delivery partner?{" "}
-              <Link href="/delivery-login" className="text-[#E8A359] hover:text-[#c48847] font-bold transition-colors">
-                Login here
-              </Link>
-            </p>
-          </div>
         </div>
 
       </div>

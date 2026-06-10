@@ -11,9 +11,7 @@ import {
   Users, 
   Settings, 
   User,
-  Video,
   LogOut,
-  UtensilsCrossed,
   X
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -21,10 +19,8 @@ import { useRouter } from 'next/navigation'
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Orders', href: '/orders', icon: ShoppingBag },
-  { name: 'Videos', href: '/media', icon: Video },
   { name: 'Delivery Boys', href: '/delivery-boys', icon: Bike },
   { name: 'Customers', href: '/customers', icon: Users },
-  { name: 'Menu', href: '/menu', icon: UtensilsCrossed },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Profile', href: '/profile', icon: User },
 ]
