@@ -208,17 +208,24 @@ export default function OrdersPage() {
                         ₹{order.totalAmount}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            order.paymentStatus === "PAID"
-                              ? "success"
-                              : order.paymentStatus === "FAILED"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {order.paymentStatus}
-                        </Badge>
+                        <div className="flex flex-col items-start gap-1">
+                          <Badge
+                            variant={
+                              order.paymentStatus === "PAID"
+                                ? "success"
+                                : order.paymentStatus === "FAILED"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {order.paymentStatus}
+                          </Badge>
+                          {order.razorpayPaymentId && (
+                            <span className="text-[10px] text-[var(--muted-foreground)] font-mono">
+                              {order.razorpayPaymentId}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <select
