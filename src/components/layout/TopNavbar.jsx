@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import axios from 'axios'
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -44,11 +45,12 @@ export function TopNavbar({ onMenuClick }) {
       const token = localStorage.getItem('admin_token')
       if (!token) return
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        validateStatus: () => true
       })
-      if (res.ok) {
-        const data = await res.json()
+      if (res.status === 200 || res.status === 201) {
+        const data = res.data
         const newOrders = (data.data || []).filter(o => o.orderStatus === 'CONFIRMED')
         setNotifications(newOrders)
       }

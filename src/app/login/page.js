@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, Sun, Moon, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
+import axios from "axios"
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -52,13 +53,9 @@ export default function AdminLoginPage() {
     setForgotLoading(true)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Failed to send OTP")
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/forgot-password`, { email: forgotEmail }, { validateStatus: () => true })
+      const data = res.data
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || "Failed to send OTP")
       setForgotMessage(data.message || "OTP sent to your email")
       setForgotStep(2)
     } catch (err) {
@@ -75,13 +72,9 @@ export default function AdminLoginPage() {
     setForgotLoading(true)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, otp, newPassword }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Failed to reset password")
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/reset-password`, { email: forgotEmail, otp, newPassword }, { validateStatus: () => true })
+      const data = res.data
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || "Failed to reset password")
       
       setForgotMessage("Password reset successfully! You can now login.")
       setTimeout(() => {
@@ -104,15 +97,11 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/login`, { email, password }, { validateStatus: () => true })
 
-      const data = await res.json()
+      const data = res.data
 
-      if (!res.ok) {
+      if (res.status !== 200 && res.status !== 201) {
         setError(data.message || "Invalid credentials. Please try again.")
         return
       }

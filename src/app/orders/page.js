@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Navigation } from "lucide-react";
 import Link from "next/link";
+import axios from "axios";
 
 const ORDER_STATUSES = [
   "CONFIRMED",
@@ -45,12 +46,12 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders?t=${new Date().getTime()}`,
-        { headers },
+        { headers, validateStatus: () => true },
       );
-      if (res.ok) {
-        const data = await res.json();
+      if (res.status === 200 || res.status === 201) {
+        const data = res.data;
         const list = data.data?.orders || data.data || [];
         setOrders(Array.isArray(list) ? list : []);
       }
@@ -63,12 +64,12 @@ export default function OrdersPage() {
 
   const fetchDeliveryBoys = async () => {
     try {
-      const res = await fetch(
+      const res = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy`,
-        { headers },
+        { headers, validateStatus: () => true },
       );
-      if (res.ok) {
-        const data = await res.json();
+      if (res.status === 200 || res.status === 201) {
+        const data = res.data;
         setDeliveryBoys(data.data?.filter((b) => b.active) || []);
       }
     } catch (err) {
@@ -79,15 +80,12 @@ export default function OrdersPage() {
   const handleStatusChange = async (orderId, newStatus) => {
     setUpdatingId(orderId);
     try {
-      const res = await fetch(
+      const res = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders/${orderId}/status`,
-        {
-          method: "PUT",
-          headers,
-          body: JSON.stringify({ status: newStatus }),
-        },
+        { status: newStatus },
+        { headers, validateStatus: () => true },
       );
-      if (res.ok) {
+      if (res.status === 200 || res.status === 201) {
         setOrders((prev) =>
           prev.map((o) =>
             o._id === orderId ? { ...o, orderStatus: newStatus } : o,
@@ -105,16 +103,13 @@ export default function OrdersPage() {
     if (!deliveryBoyId) return;
     setUpdatingId(orderId);
     try {
-      const res = await fetch(
+      const res = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders/${orderId}/assign`,
-        {
-          method: "PUT",
-          headers,
-          body: JSON.stringify({ deliveryBoyId }),
-        },
+        { deliveryBoyId },
+        { headers, validateStatus: () => true },
       );
-      const data = await res.json();
-      if (res.ok) {
+      const data = res.data;
+      if (res.status === 200 || res.status === 201) {
         fetchOrders();
       } else {
         alert(`Failed to assign delivery boy: ${data.message}`);

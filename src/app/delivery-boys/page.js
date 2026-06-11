@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Plus, Edit, Trash2, X, ToggleLeft, ToggleRight } from "lucide-react"
+import axios from "axios"
 
 const VEHICLE_TYPES = ["Bike", "Scooter", "Bicycle", "On Foot"]
 
@@ -27,9 +28,9 @@ export default function DeliveryBoysPage() {
   const fetchBoys = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy`, { headers })
-      if (res.ok) {
-        const data = await res.json()
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy`, { headers, validateStatus: () => true })
+      if (res.status === 200 || res.status === 201) {
+        const data = res.data
         setBoys(data.data || [])
       }
     } catch (err) {
@@ -73,11 +74,11 @@ export default function DeliveryBoysPage() {
       const url = editing
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy/${editing._id}`
         : `${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy`
-      const method = editing ? 'PUT' : 'POST'
+      const method = editing ? 'put' : 'post'
 
-      const res = await fetch(url, { method, headers, body: JSON.stringify(payload) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Failed to save')
+      const res = await axios({ method, url, data: payload, headers, validateStatus: () => true })
+      const data = res.data
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || 'Failed to save')
       await fetchBoys()
       closeModal()
     } catch (err) {
@@ -90,11 +91,10 @@ export default function DeliveryBoysPage() {
   const handleDelete = async (boy) => {
     if (!confirm(`Delete "${boy.name}"? This cannot be undone.`)) return
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy/${boy._id}`, {
-        method: 'DELETE',
-        headers,
+      const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy/${boy._id}`, {
+        headers, validateStatus: () => true
       })
-      if (res.ok) setBoys(prev => prev.filter(b => b._id !== boy._id))
+      if (res.status === 200 || res.status === 201) setBoys(prev => prev.filter(b => b._id !== boy._id))
     } catch (err) {
       console.error('Delete failed:', err)
     }
@@ -102,12 +102,10 @@ export default function DeliveryBoysPage() {
 
   const handleToggleActive = async (boy) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy/${boy._id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({ active: !boy.active }),
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/delivery-boy/${boy._id}`, { active: !boy.active }, {
+        headers, validateStatus: () => true
       })
-      if (res.ok) {
+      if (res.status === 200 || res.status === 201) {
         setBoys(prev => prev.map(b => b._id === boy._id ? { ...b, active: !b.active } : b))
       }
     } catch (err) {

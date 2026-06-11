@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Save, X } from "lucide-react"
+import axios from "axios"
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null)
@@ -35,13 +36,9 @@ export default function ProfilePage() {
     setForgotLoading(true)
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user?.email || "admin@lalbaugrotihouse.com" }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Failed to send OTP")
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/forgot-password`, { email: user?.email || "admin@lalbaugrotihouse.com" }, { validateStatus: () => true })
+      const data = res.data
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || "Failed to send OTP")
       setForgotMessage(data.message || "OTP sent to your email")
       setForgotStep(2)
     } catch (err) {
@@ -58,13 +55,9 @@ export default function ProfilePage() {
     setForgotLoading(true)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user?.email || "admin@lalbaugrotihouse.com", otp: forgotOtp, newPassword: forgotNewPassword }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Failed to reset password")
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/reset-password`, { email: user?.email || "admin@lalbaugrotihouse.com", otp: forgotOtp, newPassword: forgotNewPassword }, { validateStatus: () => true })
+      const data = res.data
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || "Failed to reset password")
       
       setForgotMessage("Password reset successfully!")
       setTimeout(() => {

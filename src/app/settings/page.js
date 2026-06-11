@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Save } from "lucide-react"
+import axios from "axios"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null)
@@ -36,11 +37,12 @@ export default function SettingsPage() {
       const freshToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
       const freshHeaders = { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' }
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
-        headers: freshHeaders
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
+        headers: freshHeaders,
+        validateStatus: () => true
       })
-      if (res.ok) {
-        const data = await res.json()
+      if (res.status === 200 || res.status === 201) {
+        const data = res.data
         setSettings(data.data)
       }
     } catch (err) {
@@ -66,22 +68,21 @@ export default function SettingsPage() {
       const freshToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
       const freshHeaders = { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' }
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
-        method: 'PUT',
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/settings`, {
+        maxRadiusKm: Number(currentSettings.maxRadiusKm),
+        restaurantLat: Number(currentSettings.restaurantLat),
+        restaurantLng: Number(currentSettings.restaurantLng),
+        restaurantPhone: currentSettings.restaurantPhone,
+        restaurantName: currentSettings.restaurantName,
+        isAcceptingOrders: currentSettings.isAcceptingOrders,
+        serviceStartTime: currentSettings.serviceStartTime,
+        serviceEndTime: currentSettings.serviceEndTime,
+      }, {
         headers: freshHeaders,
-        body: JSON.stringify({
-          maxRadiusKm: Number(currentSettings.maxRadiusKm),
-          restaurantLat: Number(currentSettings.restaurantLat),
-          restaurantLng: Number(currentSettings.restaurantLng),
-          restaurantPhone: currentSettings.restaurantPhone,
-          restaurantName: currentSettings.restaurantName,
-          isAcceptingOrders: currentSettings.isAcceptingOrders,
-          serviceStartTime: currentSettings.serviceStartTime,
-          serviceEndTime: currentSettings.serviceEndTime,
-        }),
+        validateStatus: () => true
       })
-      if (!res.ok) {
-        const data = await res.json()
+      if (res.status !== 200 && res.status !== 201) {
+        const data = res.data
         showToast(data.message || 'Failed to save settings', 'error')
       }
     } catch (err) {

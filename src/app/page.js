@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Package, TrendingUp, Clock, CheckCircle2 } from "lucide-react"
+import axios from "axios"
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
@@ -18,17 +19,17 @@ export default function Dashboard() {
       if (!isPolling) setLoading(true)
       try {
         const [dashRes, ordersRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/dashboard?t=${new Date().getTime()}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders?t=${new Date().getTime()}`, { headers }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/dashboard?t=${new Date().getTime()}`, { headers, validateStatus: () => true }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders?t=${new Date().getTime()}`, { headers, validateStatus: () => true }),
         ])
 
-        if (dashRes.ok) {
-          const dashData = await dashRes.json()
+        if (dashRes.status === 200 || dashRes.status === 201) {
+          const dashData = dashRes.data
           setStats(dashData.data)
         }
 
-        if (ordersRes.ok) {
-          const ordersData = await ordersRes.json()
+        if (ordersRes.status === 200 || ordersRes.status === 201) {
+          const ordersData = ordersRes.data
           const orders = ordersData.data?.orders || ordersData.data || []
           setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : [])
         }

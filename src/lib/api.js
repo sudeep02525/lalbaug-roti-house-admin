@@ -1,3 +1,4 @@
+import axios from 'axios'
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 function getToken() {
@@ -13,10 +14,10 @@ async function request(path, options = {}) {
     ...options.headers
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
-  const data = await res.json()
+  const res = await axios(`${API_BASE}${path}`, { ...options, headers, data: options.body, validateStatus: () => true })
+  const data = res.data
 
-  if (!res.ok) {
+  if (res.status !== 200 && res.status !== 201) {
     throw new Error(data.message || 'Something went wrong')
   }
 
