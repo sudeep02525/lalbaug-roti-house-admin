@@ -107,7 +107,11 @@ export default function AdminLoginPage() {
       }
 
       localStorage.setItem("admin_token", data.data.token)
-      localStorage.setItem("admin_user", JSON.stringify(data.data.admin))
+      
+      // Fix: data.data itself contains the user info (_id, name, email, role), not data.data.admin
+      const { token, ...userData } = data.data
+      localStorage.setItem("admin_user", JSON.stringify(userData))
+      
       router.push("/")
     } catch (err) {
       setError("Unable to connect to server. Please try again.")

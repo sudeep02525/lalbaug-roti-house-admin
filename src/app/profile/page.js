@@ -125,7 +125,7 @@ export default function ProfilePage() {
             </div>
           </CardContent>
           <CardFooter className="border-t border-[var(--border)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Button variant="accent">
+            <Button>
               Update Password
             </Button>
             <button type="button" onClick={() => {
