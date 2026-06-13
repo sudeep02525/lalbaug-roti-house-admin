@@ -223,20 +223,28 @@ export default function OrdersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <select
-                          className="text-sm font-semibold border border-[var(--border)] rounded-lg px-3 py-1.5 bg-[var(--sidebar)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 disabled:opacity-50 transition-all shadow-sm"
-                          value={order.orderStatus}
-                          onChange={(e) =>
-                            handleStatusChange(order._id, e.target.value)
-                          }
-                          disabled={updatingId === order._id}
-                        >
-                          {ORDER_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          {['PENDING', 'ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(order.orderStatus) && (
+                            <span className="relative flex h-2.5 w-2.5 shrink-0" title="Active Order">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                          )}
+                          <select
+                            className="text-sm font-semibold border border-[var(--border)] rounded-lg px-3 py-1.5 bg-[var(--sidebar)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 disabled:opacity-50 transition-all shadow-sm w-full"
+                            value={order.orderStatus}
+                            onChange={(e) =>
+                              handleStatusChange(order._id, e.target.value)
+                            }
+                            disabled={updatingId === order._id}
+                          >
+                            {ORDER_STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {s.replace(/_/g, ' ')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {order.assignedDeliveryBoy ? (
