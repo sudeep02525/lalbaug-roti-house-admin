@@ -22,6 +22,7 @@ const ORDER_STATUSES = [
   "OUT_FOR_DELIVERY",
   "DELIVERED",
   "CANCELLED",
+  "FAILED",
 ];
 
 export default function OrdersPage() {
@@ -230,20 +231,28 @@ export default function OrdersPage() {
                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                             </span>
                           )}
-                          <select
-                            className="text-sm font-semibold border border-[var(--border)] rounded-lg px-3 py-1.5 bg-[var(--sidebar)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 disabled:opacity-50 transition-all shadow-sm w-full"
-                            value={order.orderStatus}
-                            onChange={(e) =>
-                              handleStatusChange(order._id, e.target.value)
-                            }
-                            disabled={updatingId === order._id}
-                          >
-                            {ORDER_STATUSES.map((s) => (
-                              <option key={s} value={s}>
-                                {s.replace(/_/g, ' ')}
-                              </option>
-                            ))}
-                          </select>
+                          {['DELIVERED', 'FAILED', 'CANCELLED'].includes(order.orderStatus) ? (
+                            <Badge variant={
+                                order.orderStatus === 'DELIVERED' ? 'success' : 'destructive'
+                              } className="w-full justify-center py-2 text-xs uppercase tracking-widest pointer-events-none">
+                              {order.orderStatus.replace(/_/g, ' ')}
+                            </Badge>
+                          ) : (
+                            <select
+                              className="text-sm font-semibold border border-[var(--border)] rounded-lg px-3 py-1.5 bg-[var(--sidebar)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 disabled:opacity-50 transition-all shadow-sm w-full"
+                              value={order.orderStatus}
+                              onChange={(e) =>
+                                handleStatusChange(order._id, e.target.value)
+                              }
+                              disabled={updatingId === order._id}
+                            >
+                              {ORDER_STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                  {s.replace(/_/g, ' ')}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -265,7 +274,8 @@ export default function OrdersPage() {
                             }
                             disabled={
                               updatingId === order._id ||
-                              deliveryBoys.length === 0
+                              deliveryBoys.length === 0 ||
+                              ['DELIVERED', 'FAILED', 'CANCELLED'].includes(order.orderStatus)
                             }
                           >
                             <option value="" disabled>

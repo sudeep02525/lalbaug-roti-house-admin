@@ -128,7 +128,7 @@ export default function Dashboard() {
                       <TableCell>
                         <Badge variant={
                           order.orderStatus === 'DELIVERED' ? 'success' :
-                          order.orderStatus === 'CANCELLED' ? 'destructive' :
+                          order.orderStatus === 'CANCELLED' || order.orderStatus === 'FAILED' ? 'destructive' :
                           order.orderStatus === 'PENDING' ? 'warning' :
                           order.orderStatus === 'CONFIRMED' ? 'confirmed' :
                           order.orderStatus === 'OUT_FOR_DELIVERY' ? 'outForDelivery' : 'secondary'
